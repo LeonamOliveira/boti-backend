@@ -11,7 +11,9 @@ async function routes(fastify, options) {
       function onConnect (err, client) {
         if (err) return reply.send(err)
         
-        const sqlQuery = 'SELECT * FROM produto';
+        const sqlQuery = `SELECT 
+          produto_id, nome_produto, descricao_produto, preco_produto, qtd_estoque, DATE_FORMAT(data_cadastro_produto, '%d/%m/%Y') as data_cadastro_produto, categoria_id, imagem
+        FROM produto`;
 
         client.query(sqlQuery, function onResult (err, result) {
             client.release()

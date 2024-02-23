@@ -11,7 +11,9 @@ async function routes(fastify, options) {
       function onConnect (err, client) {
         if (err) return reply.send(err)
         
-        const sqlQuery = 'SELECT * FROM cliente';
+        const sqlQuery = `
+          SELECT cliente_id, nome, cpf, email, telefone, DATE_FORMAT(data_nascimento, '%d/%m/%Y') as data_nascimento, endereco_id, username, senha
+            FROM cliente`;
 
         client.query(sqlQuery, function onResult (err, result) {
             client.release()
@@ -126,14 +128,14 @@ async function routes(fastify, options) {
   fastify.post('/clientes', (req, reply) => {
     try {
       const {
-        email,
-        username,
-        senha,
         nome,
         cpf,
+        email,
         telefone,
         data_nascimento,
         endereco_id,
+        username, 
+        senha
       } = req.body;
   
       if (!endereco_id || !cpf) {
@@ -160,7 +162,7 @@ async function routes(fastify, options) {
         }
         
         const sql =
-          `INSERT INTO cliente (email, username, senha, nome, cpf, telefone, data_nascimento, endereco_id)
+          `INSERT INTO cliente (nome, cpf, email, telefone, data_nascimento, endereco_id, username, senha)
           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
 
         client.query(sql, fieldValues, function onResult(err, result) {
