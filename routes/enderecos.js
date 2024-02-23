@@ -54,10 +54,11 @@ async function routes(fastify, options) {
 
   fastify.put('/enderecos/:id', (req, reply) => {
     const { id } = req.params;
+    const { cep, rua, bairro, cidade, numero, complemento, uf } = req.body;
 
     try {
       if (!isValidId(id)) {
-        reply.code(400).send('Invalid endereco ID. Please provide a valid numeric ID')
+        reply.code(400).send('Invalid address ID. Please provide a valid numeric ID')
       }
 
       fastify.mysql.getConnection(onConnect);
@@ -81,10 +82,11 @@ async function routes(fastify, options) {
           return;
         }
 
-        const sqlQuery = `UPDATE endereco SET ${updateFields.join(', ')} WHERE endereco_id = ?`;
+        const sql = `UPDATE endereco SET ${updateFields.join(', ')} WHERE endereco_id = ${id}`;
+        
         fieldValues.push(id);
 
-        client.query(sqlQuery, fieldValues, function onResult(err, result) {
+        client.query(sql, fieldValues, function onResult(err, result) {
           client.release();
           reply.send(err || result);
         });
@@ -99,7 +101,7 @@ async function routes(fastify, options) {
 
     try {
       if (!isValidId(id)) {
-        reply.code(400).send('Invalid endereco ID. Please provide a valid numeric ID.');
+        reply.code(400).send('Invalid address ID. Please provide a valid numeric ID.');
         return;
       }
   
@@ -107,11 +109,10 @@ async function routes(fastify, options) {
   
       function onConnect(err, client) {
         if (err) return reply.send(err);
-  
-        client.query(
-          'DELETE FROM endereco WHERE endereco_id = ?',
-          [id],
-          function onResult(err, result) {
+        
+        const sqlQuery =  'DELETE FROM endereco WHERE endereco_id = ?';
+
+        client.query(sqlQuery, [id], function onResult(err, result) {
             client.release();
             reply.send(err || result);
           }
@@ -122,37 +123,29 @@ async function routes(fastify, options) {
     }
   });
 
-  fastify.post('/enderecos', async (req, reply) => {
+  fastify.post('/enderecos', (req, reply) => {
+    const { cep, rua, bairro, cidade, numero, complemento, uf } = req.body;
+
     try {
-      const {
-        cep,
-        rua,
-        bairro,
-        cidade,
-        numero,
-        complemento,
-        uf
-      } = req.body;
-
+      
       fastify.mysql.getConnection(onConnect);
-
+      
       function onConnect(err, client) {
         if (err) return reply.send(err);
-        // INSERT INTO endereco(cep, rua, bairro, cidade, numero, complemento, uf) VALUES ('77777888', 'w1', 'Jd America', 'Rio de Fevereiro', '1', 'qd 1', 'RJ');
 
-        const sql = `INSERT INTO endereco(cep, rua, bairro, cidade, numero, complemento, uf) 
-          VALUES(?, ?, ?, ?, ?, ?, ?)`;
+        const fieldValues = [cep, rua, bairro, cidade, numero, complemento, uf];
+        const sqlQuery = 'INSERT INTO endereco (cep, rua, bairro, cidade, numero, complemento, uf) VALUES (?, ?, ?, ?, ?, ?, ?)';
 
-        
-        client.query(sql, function onResult(err, result) {
-          client.release();
-          reply.send(err || result);
-        });
+        client.query(sqlQuery, fieldValues, function onResult(err, result) {
+            client.release();
+            reply.send(err || result);
+          }
+        );
       }
     } catch (err) {
-      handleError(err, reply, 'Error creating endereco')
+      handleError(err, reply, 'Error creating endereco');
     }
-  })
+  });
 }
 
 function isValidId(id) {
